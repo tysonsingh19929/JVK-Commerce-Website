@@ -49,8 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // 2. CONTACT ENQUIRY FORM -> WHATSAPP LINK GENERATOR
+  // 2. CONTACT ENQUIRY FORM -> DIRECT WHATSAPP LINK GENERATOR
+  // Company WhatsApp: +971 554741125
   // ==========================================================================
+  const WHATSAPP_COMPANY_NUMBER = '971554741125';
+
   const contactForm = document.getElementById('contactForm');
   if (contactForm) {
     contactForm.addEventListener('submit', (e) => {
@@ -63,14 +66,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const lines = [
         'Hello JVK Commerce, I would like to enquire about marketplace growth support.',
-        `Name: ${name}`,
-        `Company: ${company}`,
-        `Email: ${email}`,
-        `Market of interest: ${market}`,
-        `Message: ${message}`
+        '',
+        `*Name:* ${name}`,
+        `*Company / Brand:* ${company}`,
+        `*Email:* ${email}`,
+        `*Market of Interest:* ${market}`,
+        `*Message:* ${message}`,
+        '',
+        'Sent via JVK Commerce Portal (https://jvkcommerce.com)'
       ];
 
-      const waUrl = `https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`;
+      const waUrl = `https://wa.me/${WHATSAPP_COMPANY_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
     });
   }
