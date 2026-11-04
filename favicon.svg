@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c665c"/>
+      <stop offset="100%" stop-color="#144d45"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0b769"/>
+      <stop offset="100%" stop-color="#d59a4f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base with Deep Luxury Teal -->
+  <rect width="180" height="180" rx="40" fill="url(#bgGrad)"/>
+  <rect x="5" y="5" width="170" height="170" rx="35" stroke="url(#goldGrad)" stroke-width="2.5" stroke-opacity="0.35"/>
+
+  <!-- Storefront Awning / Global Marketplace Geometry -->
+  <g transform="translate(42, 38)">
+    <!-- Awning roof line -->
+    <path d="M4 36h88M12 36l8-18h56l8 18" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Gold Awning Accents -->
+    <path d="M30 18v18M50 18v18M70 18v18" stroke="url(#goldGrad)" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Store Pillars & Foundation -->
+    <path d="M16 36v46h64V36" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M8 82h80" stroke="url(#goldGrad)" stroke-width="6" stroke-linecap="round"/>
+
+    <!-- Inner JVK Growth Chevron -->
+    <path d="M34 62l14-14 14 14" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="48" cy="68" r="4.5" fill="#ffffff"/>
+  </g>
+</svg>

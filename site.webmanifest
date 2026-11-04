@@ -1,0 +1,27 @@
+{
+  "name": "JVK Commerce — Global Marketplace Partners",
+  "short_name": "JVK Commerce",
+  "description": "Your trusted partner for global e-commerce growth. Specialist marketplace management across North America, Europe, Australia, and the Gulf.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f7f2",
+  "theme_color": "#1c665c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
