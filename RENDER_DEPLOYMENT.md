@@ -1,6 +1,6 @@
 # JVK Commerce — Render Backend & Deployment Guide
 
-This guide details how to deploy the JVK Commerce website, API backend, and Billing Management system to **[Render](https://render.com/)**.
+This guide details how to deploy the JVK Commerce website, API backend, and Billing Management system to **[Render](https://render.com/)**, connected to **MongoDB Atlas**.
 
 ---
 
@@ -9,9 +9,49 @@ This guide details how to deploy the JVK Commerce website, API backend, and Bill
 * **Runtime**: Node.js (v18+) with Express.js.
 * **Unified Serving**: The Express server simultaneously serves the high-performance client-facing static website (`/`), the Admin & Billing Dashboard (`/admin`), and the secure REST API (`/api/*`).
 * **Database Engine**:
-  * **Render Managed PostgreSQL**: Automatically utilized when `DATABASE_URL` is set.
-  * **Standalone Disk Store**: Gracefully falls back to atomic local persistence (`data/jvk_store.json`) when running standalone or without an external database.
+  * **MongoDB Atlas (Primary)**: Seamlessly connects when `MONGODB_URI` (or `MONGO_URI`) is set. Stores all enquiries, learning subscribers, client directories, and billing invoices in cloud document collections with automated indexes.
+  * **Render Managed PostgreSQL (Alternative)**: Automatically utilized when `DATABASE_URL` is set (if MongoDB URI is not set).
+  * **Standalone Disk Store (Fallback)**: Gracefully falls back to atomic local persistence (`data/jvk_store.json`) when running standalone or offline.
 * **Authentication**: JWT (JSON Web Tokens) with 7-day session validity.
+
+---
+
+## Connecting MongoDB Atlas to Render
+
+### Step 1: Create Free MongoDB Cluster in MongoDB Atlas
+1. In [cloud.mongodb.com](https://cloud.mongodb.com), complete organization creation:
+   * Leave Security/Operations email optional or enter your email.
+   * Click **Create Organization**.
+2. Click **Create Project** (e.g. name it `JVK-Commerce`).
+3. Click **Deploy Database** &rarr; select **M0 (Free forever)** tier &rarr; Click **Create**.
+
+### Step 2: Set Username, Password & Network Access
+1. Under **Quickstart / Security**:
+   * **Username**: e.g. `jvkadmin`
+   * **Password**: Click **Autogenerate Secure Password** or set a strong password (copy and save this password!).
+   * Click **Create User**.
+2. Under **Network Access** / **Where would you like to connect from?**:
+   * Select **Allow Access from Anywhere** (`0.0.0.0/0`).
+   * *(This is required so Render's cloud servers can connect to your MongoDB cluster)*.
+   * Click **Add Entry**.
+
+### Step 3: Get Connection String
+1. Click **Connect** (or go to Database Deployments &rarr; click **Connect** on your cluster).
+2. Choose **Drivers** &rarr; Driver: **Node.js**.
+3. Copy the connection string:
+   ```
+   mongodb+srv://jvkadmin:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+   ```
+4. Replace `<password>` with the password you created in Step 2.
+
+### Step 4: Add to Render Environment Variables
+1. Go to your [Render Dashboard](https://dashboard.render.com).
+2. Click your Web Service: `jvk-commerce-portal`.
+3. Go to **Environment** in the left menu.
+4. Click **Add Environment Variable**:
+   * **Key**: `MONGODB_URI`
+   * **Value**: *(paste your complete connection string)*
+5. Click **Save Changes**. Render will automatically redeploy and connect to MongoDB Atlas!
 
 ---
 
@@ -22,11 +62,9 @@ Because this repository includes a [`render.yaml`](./render.yaml) blueprint spec
 1. Log into your [Render Dashboard](https://dashboard.render.com/).
 2. Click **New +** &rarr; Select **Blueprint**.
 3. Connect your GitHub repository: `https://github.com/tysonsingh19929/JVK-Commerce-Website.git`.
-4. Render will detect `render.yaml` and configure:
-   * **Web Service**: `jvk-commerce-portal`
-   * **Database**: `jvk-commerce-db` (Free PostgreSQL instance)
+4. Render will detect `render.yaml` and configure your Web Service.
 5. Click **Apply**.
-6. Render will automatically build, provision the PostgreSQL tables, and launch your live URL (e.g. `https://jvk-commerce-portal.onrender.com`).
+6. Render will automatically build and launch your live URL (e.g. `https://jvk-commerce-portal.onrender.com`).
 
 ---
 
@@ -48,7 +86,7 @@ If you prefer to configure a standard Web Service manually:
    * `ADMIN_USERNAME`: `admin`
    * `ADMIN_PASSWORD`: Your chosen secure password (e.g. `JVKAdmin2026!`)
    * `JWT_SECRET`: A random string (e.g. `jvk_jwt_secret_render_production_2026`)
-   * `DATABASE_URL`: *(Optional)* If you create a Render PostgreSQL database, paste its Internal Connection String here.
+   * `MONGODB_URI`: Your MongoDB connection string
 5. Click **Deploy Web Service**.
 
 ---

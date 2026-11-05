@@ -1,12 +1,15 @@
 /**
- * JVK COMMERCE - DUAL-ENGINE DATABASE ADAPTER
- * Supports Render Managed PostgreSQL (when DATABASE_URL is set)
- * or atomic disk persistence (data/jvk_store.json) for standalone execution.
+ * JVK COMMERCE - MULTI-ENGINE DATABASE ADAPTER
+ * Supports:
+ *   1. MongoDB Atlas (when MONGODB_URI or MONGO_URI is set)
+ *   2. Render Managed PostgreSQL (when DATABASE_URL is set)
+ *   3. Atomic disk persistence (data/jvk_store.json) for standalone execution
  */
 
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const { MongoClient } = require('mongodb');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const STORE_FILE = path.join(DATA_DIR, 'jvk_store.json');
@@ -16,17 +19,9 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-let pgPool = null;
-const isPostgres = Boolean(process.env.DATABASE_URL);
-
-if (isPostgres) {
-  pgPool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
-  });
-}
-
-// Default initial state for local store
+// -----------------------------------------------------------------------------
+// Initial Sample Data (for seeding empty databases & local dev)
+// -----------------------------------------------------------------------------
 const initialData = {
   enquiries: [],
   learning_optins: [],
@@ -108,30 +103,81 @@ const initialData = {
   ]
 };
 
-// Local disk JSON store helper
-function loadLocalStore() {
-  try {
-    if (!fs.existsSync(STORE_FILE)) {
-      fs.writeFileSync(STORE_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
-      return initialData;
+// -----------------------------------------------------------------------------
+// Engine 1: MongoDB Atlas Driver
+// -----------------------------------------------------------------------------
+const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+let mongoClient = null;
+let mongoDb = null;
+let mongoInitPromise = null;
+
+async function initMongo() {
+  if (!mongoUri) return null;
+  if (mongoDb) return mongoDb;
+  if (mongoInitPromise) return mongoInitPromise;
+
+  mongoInitPromise = (async () => {
+    try {
+      console.log('[Database] Connecting to MongoDB Atlas...');
+      mongoClient = new MongoClient(mongoUri, {
+        serverSelectionTimeoutMS: 8000,
+        connectTimeoutMS: 10000
+      });
+      await mongoClient.connect();
+      const dbName = process.env.MONGODB_DB_NAME || 'jvk_commerce';
+      mongoDb = mongoClient.db(dbName);
+      console.log(`[Database] MongoDB connected successfully: database="${dbName}"`);
+
+      // Ensure indexes
+      await Promise.allSettled([
+        mongoDb.collection('enquiries').createIndex({ id: 1 }, { unique: true }),
+        mongoDb.collection('enquiries').createIndex({ created_at: -1 }),
+        mongoDb.collection('enquiries').createIndex({ status: 1 }),
+        mongoDb.collection('learning_optins').createIndex({ id: 1 }, { unique: true }),
+        mongoDb.collection('learning_optins').createIndex({ created_at: -1 }),
+        mongoDb.collection('clients').createIndex({ id: 1 }, { unique: true }),
+        mongoDb.collection('clients').createIndex({ created_at: -1 }),
+        mongoDb.collection('billings').createIndex({ id: 1 }, { unique: true }),
+        mongoDb.collection('billings').createIndex({ client_id: 1 }),
+        mongoDb.collection('billings').createIndex({ created_at: -1 })
+      ]);
+
+      // Seed initial sample data if empty
+      const clientCount = await mongoDb.collection('clients').countDocuments();
+      if (clientCount === 0) {
+        await mongoDb.collection('clients').insertMany(initialData.clients);
+        await mongoDb.collection('billings').insertMany(initialData.billings);
+        console.log('[Database] MongoDB seeded with initial clients & billings');
+      }
+
+      return mongoDb;
+    } catch (err) {
+      console.error('[Database] MongoDB connection error:', err.message);
+      mongoDb = null;
+      return null;
     }
-    const raw = fs.readFileSync(STORE_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error('Error reading store file, initializing defaults:', err);
-    return initialData;
-  }
+  })();
+
+  return mongoInitPromise;
 }
 
-function saveLocalStore(data) {
-  try {
-    fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Error saving store file:', err);
-  }
+if (mongoUri) {
+  initMongo();
 }
 
-// PostgreSQL table initialization
+// -----------------------------------------------------------------------------
+// Engine 2: PostgreSQL Driver (Render Managed PostgreSQL)
+// -----------------------------------------------------------------------------
+const isPostgres = Boolean(!mongoUri && process.env.DATABASE_URL);
+let pgPool = null;
+
+if (isPostgres) {
+  pgPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
+  });
+}
+
 async function initPostgres() {
   if (!pgPool) return;
 
@@ -208,27 +254,77 @@ async function initPostgres() {
   }
 }
 
-// Auto initialize
 if (isPostgres) {
   initPostgres();
-} else {
+}
+
+// -----------------------------------------------------------------------------
+// Engine 3: Local Disk JSON Store Fallback
+// -----------------------------------------------------------------------------
+function loadLocalStore() {
+  try {
+    if (!fs.existsSync(STORE_FILE)) {
+      fs.writeFileSync(STORE_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
+      return initialData;
+    }
+    const raw = fs.readFileSync(STORE_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading store file, initializing defaults:', err);
+    return initialData;
+  }
+}
+
+function saveLocalStore(data) {
+  try {
+    fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error saving store file:', err);
+  }
+}
+
+if (!mongoUri && !isPostgres) {
   loadLocalStore();
   console.log('[Database] Standalone disk store active at data/jvk_store.json');
 }
 
-// Export unified repository functions
+// Helper to determine active database engine
+async function getActiveEngine() {
+  if (mongoUri) {
+    const db = await initMongo();
+    if (db) return 'mongodb';
+  }
+  if (isPostgres && pgPool) return 'postgresql';
+  return 'standalone_disk';
+}
+
+// -----------------------------------------------------------------------------
+// UNIFIED REPOSITORY INTERFACE
+// -----------------------------------------------------------------------------
 module.exports = {
   isPostgres,
+  isMongo: Boolean(mongoUri),
 
   async getHealth() {
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      try {
+        const ping = await mongoDb.command({ ping: 1 });
+        return { status: 'ok', engine: 'mongodb', ping: ping.ok === 1 ? 'ok' : 'degraded', database: mongoDb.databaseName };
+      } catch (err) {
+        return { status: 'error', engine: 'mongodb', error: err.message };
+      }
+    }
+    if (engine === 'postgresql') {
       const res = await pgPool.query('SELECT NOW() as now');
       return { status: 'ok', engine: 'postgresql', time: res.rows[0].now };
     }
     return { status: 'ok', engine: 'standalone_disk', file: 'data/jvk_store.json' };
   },
 
-  // ENQUIRIES
+  // ---------------------------------------------------------------------------
+  // ENQUIRIES (LEADS)
+  // ---------------------------------------------------------------------------
   async insertEnquiry(enquiry) {
     const record = {
       id: `enq_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -239,7 +335,13 @@ module.exports = {
       ...enquiry
     };
 
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      const doc = { ...record };
+      await mongoDb.collection('enquiries').insertOne(doc);
+      return record;
+    }
+    if (engine === 'postgresql') {
       const sql = `
         INSERT INTO enquiries (id, name, company, email, market, message, ip_address, user_agent, status, notes, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -261,7 +363,13 @@ module.exports = {
   },
 
   async getEnquiries(filterStatus) {
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      const query = filterStatus && filterStatus !== 'all' ? { status: filterStatus } : {};
+      const items = await mongoDb.collection('enquiries').find(query, { projection: { _id: 0 } }).sort({ created_at: -1 }).toArray();
+      return items;
+    }
+    if (engine === 'postgresql') {
       let sql = 'SELECT * FROM enquiries ORDER BY created_at DESC';
       let params = [];
       if (filterStatus && filterStatus !== 'all') {
@@ -280,7 +388,16 @@ module.exports = {
   },
 
   async updateEnquiry(id, updates) {
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      const result = await mongoDb.collection('enquiries').findOneAndUpdate(
+        { id },
+        { $set: { ...updates, updated_at: new Date().toISOString() } },
+        { returnDocument: 'after', projection: { _id: 0 } }
+      );
+      return result;
+    }
+    if (engine === 'postgresql') {
       const fields = [];
       const values = [];
       let idx = 1;
@@ -305,7 +422,9 @@ module.exports = {
     }
   },
 
-  // LEARNING OPT-INS
+  // ---------------------------------------------------------------------------
+  // LEARNING OPT-INS (OPERATOR ACADEMY)
+  // ---------------------------------------------------------------------------
   async insertLearning(optin) {
     const record = {
       id: `lrn_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -314,7 +433,12 @@ module.exports = {
       ...optin
     };
 
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      await mongoDb.collection('learning_optins').insertOne({ ...record });
+      return record;
+    }
+    if (engine === 'postgresql') {
       const sql = `
         INSERT INTO learning_optins (id, email, whatsapp, consent, ip_address, status, created_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -332,7 +456,11 @@ module.exports = {
   },
 
   async getLearningOptins() {
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      return await mongoDb.collection('learning_optins').find({}, { projection: { _id: 0 } }).sort({ created_at: -1 }).toArray();
+    }
+    if (engine === 'postgresql') {
       const res = await pgPool.query('SELECT * FROM learning_optins ORDER BY created_at DESC');
       return res.rows;
     } else {
@@ -341,7 +469,9 @@ module.exports = {
     }
   },
 
+  // ---------------------------------------------------------------------------
   // CLIENTS
+  // ---------------------------------------------------------------------------
   async insertClient(client) {
     const record = {
       id: `cli_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -352,7 +482,12 @@ module.exports = {
       ...client
     };
 
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      await mongoDb.collection('clients').insertOne({ ...record });
+      return record;
+    }
+    if (engine === 'postgresql') {
       const sql = `
         INSERT INTO clients (id, name, company, email, phone, billing_address, country, vat_tax_number, marketplaces, service_tier, status, notes, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
@@ -375,7 +510,11 @@ module.exports = {
   },
 
   async getClients() {
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      return await mongoDb.collection('clients').find({}, { projection: { _id: 0 } }).sort({ created_at: -1 }).toArray();
+    }
+    if (engine === 'postgresql') {
       const res = await pgPool.query('SELECT * FROM clients ORDER BY created_at DESC');
       return res.rows;
     } else {
@@ -385,7 +524,14 @@ module.exports = {
   },
 
   async getClientById(id) {
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      const client = await mongoDb.collection('clients').findOne({ id }, { projection: { _id: 0 } });
+      if (!client) return null;
+      const billings = await mongoDb.collection('billings').find({ client_id: id }, { projection: { _id: 0 } }).sort({ created_at: -1 }).toArray();
+      return { ...client, billings };
+    }
+    if (engine === 'postgresql') {
       const res = await pgPool.query('SELECT * FROM clients WHERE id = $1', [id]);
       if (res.rows.length === 0) return null;
       const client = res.rows[0];
@@ -402,7 +548,16 @@ module.exports = {
   },
 
   async updateClient(id, updates) {
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      const result = await mongoDb.collection('clients').findOneAndUpdate(
+        { id },
+        { $set: { ...updates, updated_at: new Date().toISOString() } },
+        { returnDocument: 'after', projection: { _id: 0 } }
+      );
+      return result;
+    }
+    if (engine === 'postgresql') {
       const fields = [];
       const values = [];
       let idx = 1;
@@ -427,9 +582,10 @@ module.exports = {
     }
   },
 
+  // ---------------------------------------------------------------------------
   // BILLINGS & INVOICES
+  // ---------------------------------------------------------------------------
   async insertBilling(billing) {
-    // Lookup client company if client_id is given
     let clientName = billing.client_name || '';
     let clientCompany = billing.client_company || '';
 
@@ -466,7 +622,12 @@ module.exports = {
       updated_at: new Date().toISOString()
     };
 
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      await mongoDb.collection('billings').insertOne({ ...record });
+      return record;
+    }
+    if (engine === 'postgresql') {
       const sql = `
         INSERT INTO billings (id, client_id, client_name, client_company, invoice_number, service_description, amount, tax_amount, total_amount, currency, issue_date, due_date, status, paid_at, payment_method, notes, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
@@ -490,7 +651,12 @@ module.exports = {
   },
 
   async getBillings(filterStatus) {
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      const query = filterStatus && filterStatus !== 'all' ? { status: filterStatus } : {};
+      return await mongoDb.collection('billings').find(query, { projection: { _id: 0 } }).sort({ issue_date: -1, created_at: -1 }).toArray();
+    }
+    if (engine === 'postgresql') {
       let sql = 'SELECT * FROM billings ORDER BY issue_date DESC, created_at DESC';
       let params = [];
       if (filterStatus && filterStatus !== 'all') {
@@ -509,7 +675,11 @@ module.exports = {
   },
 
   async getBillingById(id) {
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      return await mongoDb.collection('billings').findOne({ id }, { projection: { _id: 0 } });
+    }
+    if (engine === 'postgresql') {
       const res = await pgPool.query('SELECT * FROM billings WHERE id = $1', [id]);
       return res.rows[0] || null;
     } else {
@@ -523,7 +693,16 @@ module.exports = {
       updates.paid_at = new Date().toISOString();
     }
 
-    if (isPostgres) {
+    const engine = await getActiveEngine();
+    if (engine === 'mongodb') {
+      const result = await mongoDb.collection('billings').findOneAndUpdate(
+        { id },
+        { $set: { ...updates, updated_at: new Date().toISOString() } },
+        { returnDocument: 'after', projection: { _id: 0 } }
+      );
+      return result;
+    }
+    if (engine === 'postgresql') {
       const fields = [];
       const values = [];
       let idx = 1;
@@ -548,7 +727,9 @@ module.exports = {
     }
   },
 
+  // ---------------------------------------------------------------------------
   // DASHBOARD AGGREGATES
+  // ---------------------------------------------------------------------------
   async getDashboardStats() {
     const enquiries = await this.getEnquiries('all');
     const clients = await this.getClients();
