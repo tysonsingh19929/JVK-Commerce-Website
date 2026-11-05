@@ -8,8 +8,16 @@
 
 const fs = require('fs');
 const path = require('path');
+const dns = require('dns');
 const { Pool } = require('pg');
 const { MongoClient } = require('mongodb');
+
+// Ensure reliable SRV DNS resolution on all platforms
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // Ignore if custom DNS not allowed
+}
 
 const DATA_DIR = path.join(__dirname, 'data');
 const STORE_FILE = path.join(DATA_DIR, 'jvk_store.json');
