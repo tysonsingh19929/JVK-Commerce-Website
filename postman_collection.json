@@ -1,0 +1,257 @@
+{
+  "info": {
+    "name": "JVK Commerce Backend API",
+    "description": "Production test collection for JVK Commerce API endpoints on Render and local environment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "System Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Service is healthy', function () { const jsonData = pm.response.json(); pm.expect(jsonData.status).to.eql('ok'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public - Submit Enquiry",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Alexander Vance\",\n  \"company\": \"Vance Consumer Products\",\n  \"email\": \"alex@vanceproducts.com\",\n  \"market\": \"USA, UK & Europe\",\n  \"message\": \"We need full account management and FBA inventory forecasting for our baby care catalog.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/enquiries",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "enquiries"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 201', function () { pm.response.to.have.status(201); });",
+              "pm.test('Returns enquiry ID', function () { const jsonData = pm.response.json(); pm.expect(jsonData.success).to.be.true; pm.expect(jsonData.id).to.be.a('string'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public - Submit Learning Opt-In",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"founder@newbrand.com\",\n  \"whatsapp\": \"+971554741125\",\n  \"consent\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/learning",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "learning"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 201', function () { pm.response.to.have.status(201); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"JVKAdmin2026!\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "const jsonData = pm.response.json();",
+              "pm.expect(jsonData.token).to.be.a('string');",
+              "pm.collectionVariables.set('authToken', jsonData.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Get Dashboard Stats",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/dashboard/stats",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "dashboard", "stats"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - List Enquiries",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/enquiries",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "enquiries"]
+        }
+      }
+    },
+    {
+      "name": "Admin - Create Client",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sarah Jenkins\",\n  \"company\": \"NorthPeak Brands Ltd\",\n  \"email\": \"sarah@northpeak.com\",\n  \"phone\": \"+44 7700 900123\",\n  \"billing_address\": \"14 Berkeley Square, London, W1J 6BQ, UK\",\n  \"country\": \"United Kingdom\",\n  \"vat_tax_number\": \"GB987654321\",\n  \"marketplaces\": \"Amazon UK, Amazon US, Noon\",\n  \"service_tier\": \"Full Account Management & PPC\",\n  \"notes\": \"Signed annual retainer for Amazon US & UK catalog.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clients",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clients"]
+        }
+      }
+    },
+    {
+      "name": "Admin - Create Invoice / Billing",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"client_id\": \"1\",\n  \"invoice_number\": \"JVK-2026-001\",\n  \"service_description\": \"Monthly Global Marketplace Management & PPC Optimization - Nov 2026\",\n  \"amount\": 3500.00,\n  \"tax_amount\": 0.00,\n  \"total_amount\": 3500.00,\n  \"currency\": \"USD\",\n  \"issue_date\": \"2026-11-05\",\n  \"due_date\": \"2026-11-20\",\n  \"status\": \"pending\",\n  \"payment_method\": \"Bank Wire\",\n  \"notes\": \"Payment due in 15 days upon invoice presentation.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/billings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "billings"]
+        }
+      }
+    },
+    {
+      "name": "Admin - List Billings",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/billings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "billings"]
+        }
+      }
+    }
+  ]
+}

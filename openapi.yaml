@@ -1,0 +1,479 @@
+openapi: 3.1.0
+info:
+  title: JVK Commerce API
+  description: Backend API for JVK Commerce marketplace management services portal, client records, enquiries, and billing operations.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://jvk-commerce-website.onrender.com
+    description: Render production deployment
+
+paths:
+  /api/health:
+    get:
+      summary: Health check endpoint
+      description: Returns server operational status and database connection state.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  database:
+                    type: string
+                    example: connected
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/enquiries:
+    post:
+      summary: Submit a new client lead / enquiry
+      description: Public endpoint called by the website contact form.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnquiryInput'
+      responses:
+        '201':
+          description: Enquiry recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnquiryResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List all client leads / enquiries
+      description: Protected endpoint for admin portal.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, new, in_progress, contacted, qualified, closed]
+      responses:
+        '200':
+          description: List of enquiries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EnquiryRecord'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/enquiries/{id}:
+    patch:
+      summary: Update enquiry status or notes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [new, in_progress, contacted, qualified, closed]
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Enquiry updated
+        '404':
+          description: Enquiry not found
+
+  /api/learning:
+    post:
+      summary: Submit learning / in-house capability opt-in
+      description: Public endpoint called by the learning signup form.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningInput'
+      responses:
+        '201':
+          description: Learning registration recorded
+        '400':
+          description: Validation error
+    get:
+      summary: List learning opt-ins
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of learning registrations
+
+  /api/clients:
+    get:
+      summary: List all client accounts
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of clients
+    post:
+      summary: Create a new client account
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientInput'
+      responses:
+        '201':
+          description: Client created
+
+  /api/clients/{id}:
+    get:
+      summary: Get client details and billing history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Client profile with associated invoices
+        '404':
+          description: Client not found
+    put:
+      summary: Update client profile
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Client updated
+
+  /api/billings:
+    get:
+      summary: List all invoices and billings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, pending, paid, overdue, cancelled]
+      responses:
+        '200':
+          description: Invoices and financial summary
+    post:
+      summary: Create a new billing record / invoice
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingInput'
+      responses:
+        '201':
+          description: Invoice created
+
+  /api/billings/{id}:
+    get:
+      summary: Get single invoice with breakdown
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invoice record
+    patch:
+      summary: Update billing status (e.g. mark Paid)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [pending, paid, overdue, cancelled]
+                payment_method:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Invoice status updated
+
+  /api/dashboard/stats:
+    get:
+      summary: Aggregate operational and billing statistics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dashboard stats summary
+
+  /api/auth/login:
+    post:
+      summary: Admin portal login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  example: JVKAdmin2026!
+      responses:
+        '200':
+          description: Authentication successful, returns JWT token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+                  expiresIn:
+                    type: string
+        '401':
+          description: Invalid credentials
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    UnauthorizedError:
+      description: Missing or invalid JWT authorization token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    EnquiryInput:
+      type: object
+      required: [name, email, message]
+      properties:
+        name:
+          type: string
+          example: Sarah Jenkins
+        company:
+          type: string
+          example: NorthPeak Brands Ltd
+        email:
+          type: string
+          format: email
+          example: s.jenkins@northpeak.com
+        market:
+          type: string
+          example: USA, UK, Canada & Europe
+        message:
+          type: string
+          example: We want to launch 14 SKUs on Amazon US and need Seller Central management and PPC support.
+
+    EnquiryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        id:
+          type: string
+        message:
+          type: string
+          example: Enquiry received successfully
+
+    EnquiryRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        company:
+          type: string
+        email:
+          type: string
+        market:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+          example: new
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    LearningInput:
+      type: object
+      required: [email, consent]
+      properties:
+        email:
+          type: string
+          format: email
+          example: ops@brand.com
+        whatsapp:
+          type: string
+          example: +971554741125
+        consent:
+          type: boolean
+          example: true
+
+    ClientInput:
+      type: object
+      required: [name, company, email]
+      properties:
+        name:
+          type: string
+          example: Faisal Al-Mansoor
+        company:
+          type: string
+          example: Oasis Consumer Goods
+        email:
+          type: string
+          format: email
+          example: faisal@oasisgoods.ae
+        phone:
+          type: string
+          example: +971501234567
+        billing_address:
+          type: string
+          example: Business Bay, Tower 2, Suite 1402, Dubai, UAE
+        country:
+          type: string
+          example: United Arab Emirates
+        vat_tax_number:
+          type: string
+          example: TRN 100293847500003
+        marketplaces:
+          type: string
+          example: Amazon.ae, Noon, Amazon.sa
+        service_tier:
+          type: string
+          example: Full Marketplace Management & PPC
+        notes:
+          type: string
+
+    BillingInput:
+      type: object
+      required: [client_id, service_description, amount, currency, due_date]
+      properties:
+        client_id:
+          type: string
+        invoice_number:
+          type: string
+          example: JVK-2026-101
+        service_description:
+          type: string
+          example: Monthly Marketplace Account Management & PPC Optimization - Nov 2026
+        amount:
+          type: number
+          example: 3500.00
+        tax_amount:
+          type: number
+          example: 175.00
+        total_amount:
+          type: number
+          example: 3675.00
+        currency:
+          type: string
+          enum: [USD, AED, EUR, GBP]
+          example: USD
+        issue_date:
+          type: string
+          format: date
+          example: "2026-11-05"
+        due_date:
+          type: string
+          format: date
+          example: "2026-11-20"
+        status:
+          type: string
+          enum: [pending, paid, overdue, cancelled]
+          example: pending
+        payment_method:
+          type: string
+          example: Bank Wire / Stripe
+        notes:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Missing required field email

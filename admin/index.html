@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JVK Commerce — Admin &amp; Billing Portal</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --app-font-sans: "DM Sans", -apple-system, sans-serif;
+      --app-font-serif: "Manrope", serif;
+      --color-teal: #1c665c;
+      --color-teal-dark: #144d45;
+      --color-slate: #1d3545;
+      --color-navy: #172d3b;
+      --color-gold: #f0b769;
+      --color-bg: #f8f7f2;
+      --color-card: #ffffff;
+      --color-border: #dce4de;
+      --color-text: #1a3442;
+      --color-muted: #627882;
+      --color-success: #1b8754;
+      --color-warning: #c28214;
+      --color-danger: #cf3339;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--app-font-sans);
+      background: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    button, input, select, textarea { font: inherit; }
+
+    /* Top Admin Nav */
+    .admin-header {
+      background: var(--color-navy);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--color-gold);
+    }
+    .admin-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+    .admin-brand-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--color-teal);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--color-gold);
+    }
+    .admin-brand-text strong {
+      font-family: var(--app-font-serif);
+      font-size: 16px;
+      letter-spacing: .04em;
+      display: block;
+    }
+    .admin-brand-text small {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: #a2b7bf;
+    }
+    .admin-user-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+    }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+
+    /* Layout & Tabs */
+    .admin-nav-tabs {
+      background: #ffffff;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0 24px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 0;
+      border-bottom: 3px solid transparent;
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all .2s;
+    }
+    .tab-btn:hover { color: var(--color-teal); }
+    .tab-btn.active {
+      color: var(--color-teal);
+      border-bottom-color: var(--color-teal);
+    }
+    .badge-count {
+      background: #eaf1ed;
+      color: var(--color-teal);
+      border-radius: 10px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Container */
+    .admin-container {
+      max-width: 1280px;
+      width: 100%;
+      margin: 28px auto;
+      padding: 0 24px;
+      flex: 1;
+    }
+
+    /* Cards & Grids */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .stat-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--color-muted);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-family: var(--app-font-serif);
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--color-slate);
+    }
+    .stat-sub {
+      font-size: 12px;
+      color: var(--color-teal);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* Section Boxes */
+    .data-card {
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .data-card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafcfb;
+    }
+    .data-card-title {
+      font-family: var(--app-font-serif);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-slate);
+    }
+    .action-btn {
+      background: var(--color-teal);
+      color: #fff;
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background .2s;
+    }
+    .action-btn:hover { background: var(--color-teal-dark); }
+    .action-btn-secondary {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      color: var(--color-slate);
+    }
+    .action-btn-secondary:hover { background: #f0f4f2; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    th {
+      background: #f7faf8;
+      color: var(--color-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid #edf2ee;
+      vertical-align: middle;
+    }
+    tr:hover td { background: #fbfdfc; }
+
+    /* Badges */
+    .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .status-new { background: #e0f2fe; color: #0369a1; }
+    .status-paid { background: #dcfce7; color: #15803d; }
+    .status-pending { background: #fef3c7; color: #b45309; }
+    .status-overdue { background: #fee2e2; color: #b91c1c; }
+    .status-active { background: #dcfce7; color: #15803d; }
+    .status-contacted { background: #f3e8ff; color: #7e22ce; }
+
+    /* Login Overlay */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(23, 45, 59, 0.95);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-box {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 36px 32px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .login-box h2 {
+      font-family: var(--app-font-serif);
+      font-size: 22px;
+      color: var(--color-slate);
+      margin-bottom: 8px;
+    }
+    .login-box p {
+      font-size: 13px;
+      color: var(--color-muted);
+      margin-bottom: 24px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--color-muted);
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      border: 1px solid var(--color-border);
+      border-radius: 5px;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+    .login-submit-btn {
+      width: 100%;
+      background: var(--color-teal);
+      color: #fff;
+      border: 0;
+      padding: 12px;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .login-error {
+      color: var(--color-danger);
+      font-size: 12px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background: #ffffff;
+      border-radius: 8px;
+      max-width: 580px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body { padding: 20px; }
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #fafcfb;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login Modal -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+      <div style="margin-bottom:16px;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1c665c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 18.5h16M6.5 15V9.5h11V15M8.5 9.5V6.8h7V9.5M9 12.4h.01M12 12.4h.01M15 12.4h.01M9 15v-1.1h6V15"/>
+        </svg>
+      </div>
+      <h2>JVK Commerce</h2>
+      <p>Enter administrator credentials to manage leads, clients, and billings.</p>
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label for="loginUser">Username</label>
+          <input type="text" id="loginUser" class="form-control" value="admin" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPass">Password</label>
+          <input type="password" id="loginPass" class="form-control" placeholder="••••••••••••" required>
+        </div>
+        <button type="submit" class="login-submit-btn">Authenticate Portal</button>
+        <div class="login-error" id="loginError">Invalid credentials. Please verify your password.</div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Top Header -->
+  <header class="admin-header">
+    <a href="/admin" class="admin-brand">
+      <span class="admin-brand-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18.5h16M6.5 15V9.5h11V15M8.5 9.5V6.8h7V9.5M9 12.4h.01M12 12.4h.01M15 12.4h.01M9 15v-1.1h6V15"/></svg>
+      </span>
+      <div class="admin-brand-text">
+        <strong>JVK COMMERCE</strong>
+        <small>Portal &middot; Operations &amp; Billings</small>
+      </div>
+    </a>
+    <div class="admin-user-bar">
+      <span>Signed in as <strong id="currentAdminName">Administrator</strong></span>
+      <a href="/" target="_blank" style="color:var(--color-gold); text-decoration:none;">View Website &nearr;</a>
+      <button type="button" class="logout-btn" id="logoutBtn">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="admin-nav-tabs">
+    <button type="button" class="tab-btn active" data-tab="view-overview">Overview</button>
+    <button type="button" class="tab-btn" data-tab="view-enquiries">Enquiries <span class="badge-count" id="countEnquiries">0</span></button>
+    <button type="button" class="tab-btn" data-tab="view-clients">Clients <span class="badge-count" id="countClients">0</span></button>
+    <button type="button" class="tab-btn" data-tab="view-billings">Invoices &amp; Billings <span class="badge-count" id="countBillings">0</span></button>
+    <button type="button" class="tab-btn" data-tab="view-learning">Learning Opt-ins <span class="badge-count" id="countLearning">0</span></button>
+  </nav>
+
+  <!-- Main Admin Workspace -->
+  <main class="admin-container">
+
+    <!-- VIEW: OVERVIEW -->
+    <section class="admin-view" id="view-overview">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-title">Total Invoiced</div>
+          <div class="stat-value" id="statInvoiced">$0.00</div>
+          <div class="stat-sub">Across all clients</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Collected Revenue</div>
+          <div class="stat-value" style="color:var(--color-success);" id="statCollected">$0.00</div>
+          <div class="stat-sub">Verified payments</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Pending / In Review</div>
+          <div class="stat-value" style="color:var(--color-warning);" id="statPending">$0.00</div>
+          <div class="stat-sub">Outstanding balance</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Active Clients</div>
+          <div class="stat-value" id="statClients">0</div>
+          <div class="stat-sub">Under management</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">New Inquiries</div>
+          <div class="stat-value" style="color:var(--color-teal);" id="statNewLeads">0</div>
+          <div class="stat-sub">Needs attention</div>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-card-title">Recent Client Enquiries</div>
+          <button type="button" class="action-btn action-btn-secondary" onclick="switchTab('view-enquiries')">View All Enquiries</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Name / Brand</th>
+                <th>Email</th>
+                <th>Market</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="overviewEnquiriesTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-card-title">Recent Billings &amp; Invoices</div>
+          <button type="button" class="action-btn" onclick="openCreateInvoiceModal()">+ Create New Invoice</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Client / Brand</th>
+                <th>Description</th>
+                <th>Due Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="overviewBillingsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: ENQUIRIES -->
+    <section class="admin-view" id="view-enquiries" style="display:none;">
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-card-title">Client Leads &amp; Growth Enquiries</div>
+          <div>
+            <select id="enquiryFilterStatus" class="form-control" style="width:160px; display:inline-block;" onchange="loadEnquiries()">
+              <option value="all">All Statuses</option>
+              <option value="new">New Only</option>
+              <option value="in_progress">In Progress</option>
+              <option value="contacted">Contacted</option>
+              <option value="qualified">Qualified</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Name</th>
+                <th>Company</th>
+                <th>Email</th>
+                <th>Market</th>
+                <th>Message</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="enquiriesTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: CLIENTS -->
+    <section class="admin-view" id="view-clients" style="display:none;">
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-card-title">Client Directory &amp; Accounts</div>
+          <button type="button" class="action-btn" onclick="openCreateClientModal()">+ Add New Client</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Company / Brand</th>
+                <th>Primary Contact</th>
+                <th>Email &amp; Phone</th>
+                <th>Country</th>
+                <th>Marketplaces</th>
+                <th>Service Tier</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="clientsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: BILLINGS -->
+    <section class="admin-view" id="view-billings" style="display:none;">
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-card-title">Invoices, Retainers &amp; Billings</div>
+          <button type="button" class="action-btn" onclick="openCreateInvoiceModal()">+ Create New Invoice</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Client / Brand</th>
+                <th>Description</th>
+                <th>Issue Date</th>
+                <th>Due Date</th>
+                <th>Amount</th>
+                <th>Payment Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="billingsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: LEARNING OPT-INS -->
+    <section class="admin-view" id="view-learning" style="display:none;">
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-card-title">Operator Academy / Learning Subscribers</div>
+          <button type="button" class="action-btn action-btn-secondary" onclick="exportLearningCSV()">Export to CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date Subscribed</th>
+                <th>Work Email</th>
+                <th>WhatsApp / Phone</th>
+                <th>Consent Status</th>
+                <th>IP Address</th>
+              </tr>
+            </thead>
+            <tbody id="learningTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: ADD CLIENT -->
+  <div class="modal-backdrop" id="modalClient">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-family:var(--app-font-serif);">Add New Client Profile</h3>
+        <button type="button" style="background:none;border:0;font-size:20px;cursor:pointer;" onclick="closeModal('modalClient')">&times;</button>
+      </div>
+      <form id="formNewClient">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Brand / Company Name *</label>
+            <input type="text" id="cliCompany" class="form-control" required placeholder="e.g. Apex Consumer Care">
+          </div>
+          <div class="form-group">
+            <label>Primary Contact Name *</label>
+            <input type="text" id="cliName" class="form-control" required placeholder="e.g. Daniel Wright">
+          </div>
+          <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" id="cliEmail" class="form-control" required placeholder="daniel@apexcare.com">
+          </div>
+          <div class="form-group">
+            <label>Phone / WhatsApp</label>
+            <input type="text" id="cliPhone" class="form-control" placeholder="+971 50 123 4567">
+          </div>
+          <div class="form-group">
+            <label>Country &amp; Location</label>
+            <input type="text" id="cliCountry" class="form-control" placeholder="United Kingdom / UAE / USA">
+          </div>
+          <div class="form-group">
+            <label>VAT / Tax Number</label>
+            <input type="text" id="cliVat" class="form-control" placeholder="e.g. TRN 100234567800003">
+          </div>
+          <div class="form-group">
+            <label>Active Marketplaces</label>
+            <input type="text" id="cliMarketplaces" class="form-control" placeholder="Amazon US, Amazon UK, Noon">
+          </div>
+          <div class="form-group">
+            <label>Service Tier</label>
+            <select id="cliServiceTier" class="form-control">
+              <option value="Full Account Management &amp; PPC">Full Account Management &amp; PPC</option>
+              <option value="Marketplace Launch &amp; Setup">Marketplace Launch &amp; Setup</option>
+              <option value="PPC &amp; Advertising Growth">PPC &amp; Advertising Growth</option>
+              <option value="Catalog Optimization &amp; SEO">Catalog Optimization &amp; SEO</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="action-btn action-btn-secondary" onclick="closeModal('modalClient')">Cancel</button>
+          <button type="submit" class="action-btn">Save Client Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD INVOICE -->
+  <div class="modal-backdrop" id="modalInvoice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-family:var(--app-font-serif);">Create New Invoice / Billing</h3>
+        <button type="button" style="background:none;border:0;font-size:20px;cursor:pointer;" onclick="closeModal('modalInvoice')">&times;</button>
+      </div>
+      <form id="formNewInvoice">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Select Client *</label>
+            <select id="invClientSelect" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label>Invoice Number</label>
+            <input type="text" id="invNumber" class="form-control" placeholder="e.g. JVK-2026-003">
+          </div>
+          <div class="form-group">
+            <label>Service Description *</label>
+            <input type="text" id="invDescription" class="form-control" required placeholder="Monthly Marketplace Management - Dec 2026">
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label>Amount (Subtotal) *</label>
+              <input type="number" step="0.01" id="invAmount" class="form-control" required placeholder="3500.00">
+            </div>
+            <div class="form-group">
+              <label>Tax Amount</label>
+              <input type="number" step="0.01" id="invTax" class="form-control" value="0.00">
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label>Currency</label>
+              <select id="invCurrency" class="form-control">
+                <option value="USD">USD ($)</option>
+                <option value="AED">AED (AED)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Payment Status</label>
+              <select id="invStatus" class="form-control">
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label>Issue Date</label>
+              <input type="date" id="invIssueDate" class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Due Date</label>
+              <input type="date" id="invDueDate" class="form-control">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Payment Method &amp; Notes</label>
+            <input type="text" id="invPaymentMethod" class="form-control" placeholder="Bank Wire Transfer / Stripe">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="action-btn action-btn-secondary" onclick="closeModal('modalInvoice')">Cancel</button>
+          <button type="submit" class="action-btn">Generate Invoice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    let token = localStorage.getItem('jvk_admin_token');
+    let clientsCache = [];
+
+    // Authenticate & init
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!token) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+      } else {
+        document.getElementById('loginOverlay').style.display = 'none';
+        initAdminData();
+      }
+
+      // Tab switcher
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          switchTab(btn.getAttribute('data-tab'));
+        });
+      });
+
+      // Login form
+      document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('loginUser').value.trim();
+        const password = document.getElementById('loginPass').value.trim();
+        try {
+          const res = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (data.success && data.token) {
+            token = data.token;
+            localStorage.setItem('jvk_admin_token', token);
+            document.getElementById('loginOverlay').style.display = 'none';
+            initAdminData();
+          } else {
+            document.getElementById('loginError').style.display = 'block';
+          }
+        } catch (err) {
+          document.getElementById('loginError').style.display = 'block';
+        }
+      });
+
+      // Sign Out
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('jvk_admin_token');
+        location.reload();
+      });
+
+      // Form: New Client
+      document.getElementById('formNewClient').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          company: document.getElementById('cliCompany').value.trim(),
+          name: document.getElementById('cliName').value.trim(),
+          email: document.getElementById('cliEmail').value.trim(),
+          phone: document.getElementById('cliPhone').value.trim(),
+          country: document.getElementById('cliCountry').value.trim(),
+          vat_tax_number: document.getElementById('cliVat').value.trim(),
+          marketplaces: document.getElementById('cliMarketplaces').value.trim(),
+          service_tier: document.getElementById('cliServiceTier').value
+        };
+
+        const res = await authFetch(`${API_BASE}/clients`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          closeModal('modalClient');
+          document.getElementById('formNewClient').reset();
+          loadClients();
+          loadStats();
+        }
+      });
+
+      // Form: New Invoice
+      document.getElementById('formNewInvoice').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          client_id: document.getElementById('invClientSelect').value,
+          invoice_number: document.getElementById('invNumber').value.trim(),
+          service_description: document.getElementById('invDescription').value.trim(),
+          amount: parseFloat(document.getElementById('invAmount').value),
+          tax_amount: parseFloat(document.getElementById('invTax').value) || 0,
+          currency: document.getElementById('invCurrency').value,
+          status: document.getElementById('invStatus').value,
+          issue_date: document.getElementById('invIssueDate').value,
+          due_date: document.getElementById('invDueDate').value,
+          payment_method: document.getElementById('invPaymentMethod').value.trim()
+        };
+
+        const res = await authFetch(`${API_BASE}/billings`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          closeModal('modalInvoice');
+          document.getElementById('formNewInvoice').reset();
+          loadBillings();
+          loadStats();
+        }
+      });
+    });
+
+    // Helper fetch with auth
+    async function authFetch(url, options = {}) {
+      const headers = options.headers || {};
+      headers['Authorization'] = `Bearer ${token}`;
+      if (options.body && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+      const res = await fetch(url, { ...options, headers });
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('jvk_admin_token');
+        document.getElementById('loginOverlay').style.display = 'flex';
+      }
+      return res;
+    }
+
+    function switchTab(viewId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === viewId);
+      });
+      document.querySelectorAll('.admin-view').forEach(view => {
+        view.style.display = view.id === viewId ? 'block' : 'none';
+      });
+
+      if (viewId === 'view-enquiries') loadEnquiries();
+      if (viewId === 'view-clients') loadClients();
+      if (viewId === 'view-billings') loadBillings();
+      if (viewId === 'view-learning') loadLearning();
+    }
+
+    async function initAdminData() {
+      await loadStats();
+      await loadClients();
+      await loadEnquiries();
+      await loadBillings();
+      await loadLearning();
+    }
+
+    async function loadStats() {
+      try {
+        const res = await authFetch(`${API_BASE}/dashboard/stats`);
+        if (!res.ok) return;
+        const data = (await res.json()).data;
+        const o = data.overview;
+
+        document.getElementById('statInvoiced').textContent = '$' + o.total_invoiced_usd.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('statCollected').textContent = '$' + o.total_collected_usd.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('statPending').textContent = '$' + o.total_pending_usd.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('statClients').textContent = o.total_clients;
+        document.getElementById('statNewLeads').textContent = o.new_enquiries;
+
+        document.getElementById('countEnquiries').textContent = o.total_enquiries;
+        document.getElementById('countClients').textContent = o.total_clients;
+        document.getElementById('countLearning').textContent = o.learning_subscribers;
+
+        // Render overview tables
+        renderTableRows('overviewEnquiriesTable', data.recent_enquiries, renderEnquiryRow);
+        renderTableRows('overviewBillingsTable', data.recent_billings, renderBillingRow);
+      } catch (err) {
+        console.error('Stats error:', err);
+      }
+    }
+
+    async function loadEnquiries() {
+      const status = document.getElementById('enquiryFilterStatus').value;
+      const res = await authFetch(`${API_BASE}/enquiries?status=${status}`);
+      if (!res.ok) return;
+      const data = (await res.json()).data;
+      renderTableRows('enquiriesTable', data, renderEnquiryDetailRow);
+    }
+
+    async function loadClients() {
+      const res = await authFetch(`${API_BASE}/clients`);
+      if (!res.ok) return;
+      clientsCache = (await res.json()).data;
+      renderTableRows('clientsTable', clientsCache, renderClientRow);
+
+      // Populate client dropdown for invoices
+      const select = document.getElementById('invClientSelect');
+      select.innerHTML = '<option value="">-- Choose Existing Client --</option>';
+      clientsCache.forEach(c => {
+        select.innerHTML += `<option value="${c.id}">${c.company} (${c.name})</option>`;
+      });
+    }
+
+    async function loadBillings() {
+      const res = await authFetch(`${API_BASE}/billings`);
+      if (!res.ok) return;
+      const data = (await res.json()).data;
+      document.getElementById('countBillings').textContent = data.length;
+      renderTableRows('billingsTable', data, renderBillingDetailRow);
+    }
+
+    async function loadLearning() {
+      const res = await authFetch(`${API_BASE}/learning`);
+      if (!res.ok) return;
+      const data = (await res.json()).data;
+      renderTableRows('learningTable', data, (item) => `
+        <tr>
+          <td>${new Date(item.created_at).toLocaleDateString()}</td>
+          <td><strong>${item.email}</strong></td>
+          <td>${item.whatsapp || '&mdash;'}</td>
+          <td><span class="status-badge status-active">Consented</span></td>
+          <td><small style="color:#8da2ad;">${item.ip_address || 'Direct'}</small></td>
+        </tr>
+      `);
+    }
+
+    // Row Renderers
+    function renderEnquiryRow(item) {
+      return `
+        <tr>
+          <td>${new Date(item.created_at).toLocaleDateString()}</td>
+          <td><strong>${item.name}</strong><br><small style="color:#627882;">${item.company}</small></td>
+          <td><a href="mailto:${item.email}" style="color:var(--color-teal);">${item.email}</a></td>
+          <td>${item.market || 'Not specified'}</td>
+          <td><span class="status-badge status-${item.status}">${item.status}</span></td>
+          <td>
+            <a href="https://wa.me/971554741125?text=${encodeURIComponent('Hello ' + item.name + ', following up on your JVK Commerce enquiry.')}" target="_blank" class="action-btn" style="padding:4px 8px;font-size:11px;">Chat</a>
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderEnquiryDetailRow(item) {
+      return `
+        <tr>
+          <td>${new Date(item.created_at).toLocaleDateString()}</td>
+          <td><strong>${item.name}</strong></td>
+          <td>${item.company}</td>
+          <td><a href="mailto:${item.email}" style="color:var(--color-teal);">${item.email}</a></td>
+          <td>${item.market}</td>
+          <td style="max-width:260px; font-size:12px; line-height:1.4;">${item.message}</td>
+          <td>
+            <select onchange="updateEnquiryStatus('${item.id}', this.value)" class="form-control" style="font-size:12px; padding:4px 8px;">
+              <option value="new" ${item.status === 'new' ? 'selected' : ''}>New</option>
+              <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+              <option value="contacted" ${item.status === 'contacted' ? 'selected' : ''}>Contacted</option>
+              <option value="qualified" ${item.status === 'qualified' ? 'selected' : ''}>Qualified</option>
+              <option value="closed" ${item.status === 'closed' ? 'selected' : ''}>Closed</option>
+            </select>
+          </td>
+          <td>
+            <a href="https://wa.me/971554741125?text=${encodeURIComponent('Hello ' + item.name + ', following up on your inquiry with JVK Commerce.')}" target="_blank" class="action-btn" style="padding:4px 10px;font-size:11px;">WhatsApp</a>
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderClientRow(item) {
+      return `
+        <tr>
+          <td><strong>${item.company}</strong></td>
+          <td>${item.name}</td>
+          <td>${item.email}<br><small style="color:#8da2ad;">${item.phone || ''}</small></td>
+          <td>${item.country || 'Global'}</td>
+          <td><small>${item.marketplaces || 'Amazon, Noon'}</small></td>
+          <td><small>${item.service_tier}</small></td>
+          <td><span class="status-badge status-active">${item.status}</span></td>
+        </tr>
+      `;
+    }
+
+    function renderBillingRow(item) {
+      return `
+        <tr>
+          <td><strong>${item.invoice_number}</strong></td>
+          <td>${item.client_company || item.client_name}</td>
+          <td style="max-width:240px; font-size:12px;">${item.service_description}</td>
+          <td>${item.due_date}</td>
+          <td><strong>$${parseFloat(item.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></td>
+          <td><span class="status-badge status-${item.status}">${item.status}</span></td>
+        </tr>
+      `;
+    }
+
+    function renderBillingDetailRow(item) {
+      return `
+        <tr>
+          <td><strong>${item.invoice_number}</strong></td>
+          <td><strong>${item.client_company || item.client_name}</strong></td>
+          <td style="max-width:220px; font-size:12px;">${item.service_description}</td>
+          <td>${item.issue_date}</td>
+          <td>${item.due_date}</td>
+          <td><strong>$${parseFloat(item.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })} ${item.currency}</strong></td>
+          <td>
+            <select onchange="updateBillingStatus('${item.id}', this.value)" class="form-control" style="font-size:12px; padding:4px 8px;">
+              <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="paid" ${item.status === 'paid' ? 'selected' : ''}>Paid</option>
+              <option value="overdue" ${item.status === 'overdue' ? 'selected' : ''}>Overdue</option>
+              <option value="cancelled" ${item.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          </td>
+          <td>
+            <button onclick="printInvoice('${item.id}')" class="action-btn action-btn-secondary" style="padding:4px 10px;font-size:11px;">Print / PDF</button>
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderTableRows(tableId, list, renderer) {
+      const tbody = document.getElementById(tableId);
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#8da2ad;padding:24px;">No records available.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(renderer).join('');
+    }
+
+    async function updateEnquiryStatus(id, newStatus) {
+      await authFetch(`${API_BASE}/enquiries/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      });
+      loadStats();
+    }
+
+    async function updateBillingStatus(id, newStatus) {
+      await authFetch(`${API_BASE}/billings/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      });
+      loadStats();
+      loadBillings();
+    }
+
+    function openCreateClientModal() {
+      document.getElementById('modalClient').style.display = 'flex';
+    }
+    function openCreateInvoiceModal() {
+      // Set default dates
+      const today = new Date().toISOString().split('T')[0];
+      const due = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
+      document.getElementById('invIssueDate').value = today;
+      document.getElementById('invDueDate').value = due;
+      document.getElementById('invNumber').value = `JVK-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+      document.getElementById('modalInvoice').style.display = 'flex';
+    }
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function printInvoice(id) {
+      window.open(`${API_BASE}/billings/${id}`, '_blank');
+    }
+
+    function exportLearningCSV() {
+      authFetch(`${API_BASE}/learning`).then(res => res.json()).then(data => {
+        const rows = [["Date", "Email", "WhatsApp", "Status"]];
+        data.data.forEach(item => {
+          rows.push([item.created_at, item.email, item.whatsapp, item.status]);
+        });
+        const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `jvk_learning_subscribers_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    }
+  </script>
+</body>
+</html>

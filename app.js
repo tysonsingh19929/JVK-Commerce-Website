@@ -17,7 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function toggleMobileNav() {
     if (!navLinks || !menuToggle) return;
     const isOpen = navLinks.classList.toggle('open');
+    document.body.classList.toggle('nav-open', isOpen);
     menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    menuToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
     if (iconMenu && iconClose) {
       iconMenu.style.display = isOpen ? 'none' : 'block';
       iconClose.style.display = isOpen ? 'block' : 'none';
@@ -27,7 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeMobileNav() {
     if (!navLinks || !menuToggle) return;
     navLinks.classList.remove('open');
+    document.body.classList.remove('nav-open');
     menuToggle.setAttribute('aria-expanded', 'false');
+    menuToggle.setAttribute('aria-label', 'Open menu');
     if (iconMenu && iconClose) {
       iconMenu.style.display = 'block';
       iconClose.style.display = 'none';
@@ -38,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     menuToggle.addEventListener('click', toggleMobileNav);
   }
 
-  // Close mobile nav when clicking any nav link
+  // Close mobile nav when clicking any nav link inside drawer
   if (navLinks) {
     const links = navLinks.querySelectorAll('a');
     links.forEach(link => {
@@ -47,6 +51,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  // Close mobile drawer on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navLinks && navLinks.classList.contains('open')) {
+      closeMobileNav();
+    }
+  });
+
+  // Automatically close mobile nav if window expands to desktop size
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 720 && navLinks && navLinks.classList.contains('open')) {
+      closeMobileNav();
+    }
+  });
 
   // ==========================================================================
   // 2. CONTACT ENQUIRY FORM -> DIRECT WHATSAPP LINK GENERATOR
@@ -76,6 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
         'Sent via JVK Commerce Portal (https://jvkcommerce.com)'
       ];
 
+      // 1. Asynchronously persist enquiry record in backend database
+      fetch('/api/enquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, company, email, market, message })
+      }).catch(err => console.warn('Backend enquiry sync:', err));
+
+      // 2. Open WhatsApp directly to company number with pre-filled enquiry
       const waUrl = `https://wa.me/${WHATSAPP_COMPANY_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
     });
@@ -106,6 +132,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
           console.warn('Storage unavailable:', err);
         }
+
+        // Asynchronously persist learning opt-in in backend database
+        fetch('/api/learning', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, whatsapp: phone, consent: true })
+        }).catch(err => console.warn('Backend learning sync:', err));
 
         if (learningStatus) {
           learningStatus.style.display = 'block';
