@@ -22,6 +22,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Explicit SEO routes
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain; charset=utf-8');
+  res.send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: https://jvkcommerce.com/sitemap.xml\n');
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'sitemap.xml'));
+});
+
 // Serve main static frontend files
 app.use(express.static(path.join(__dirname)));
 
