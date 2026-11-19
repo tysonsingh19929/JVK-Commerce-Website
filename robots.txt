@@ -1,16 +1,5 @@
-﻿User-agent: Google-InspectionTool
-Allow: /
-Disallow: /admin
-Disallow: /api/
-
-User-agent: Googlebot
-Allow: /
-Disallow: /admin
-Disallow: /api/
-
-User-agent: *
-Allow: /
-Disallow: /admin
+﻿User-agent: *
+Disallow: /admin/
 Disallow: /api/
 
 Sitemap: https://jvkcommerce.com/sitemap.xml
