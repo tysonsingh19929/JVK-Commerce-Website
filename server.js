@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/robots.txt', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
   res.type('text/plain; charset=utf-8');
-  res.send('User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: https://jvkcommerce.com/sitemap.xml\n');
+  res.send('User-agent: Google-InspectionTool\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nUser-agent: Googlebot\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nUser-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: https://jvkcommerce.com/sitemap.xml\n');
 });
 
 app.get('/sitemap.xml', (req, res) => {
