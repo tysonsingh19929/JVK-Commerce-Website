@@ -35,6 +35,17 @@ app.get('/sitemap.xml', (req, res) => {
   res.sendFile(path.join(__dirname, 'sitemap.xml'));
 });
 
+// Clean Service Pillar Routes (Supports clean URLs without .html)
+app.get('/services/:slug', (req, res, next) => {
+  const cleanSlug = req.params.slug.replace(/\.html$/, '');
+  const filePath = path.join(__dirname, 'services', cleanSlug + '.html');
+  if (fs.existsSync(filePath)) {
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+    return res.sendFile(filePath);
+  }
+  next();
+});
+
 // Serve main static frontend files with edge caching
 app.use(express.static(path.join(__dirname), {
   maxAge: '1h',
