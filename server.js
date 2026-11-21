@@ -36,10 +36,39 @@ app.get('/sitemap.xml', (req, res) => {
   res.sendFile(path.join(__dirname, 'sitemap.xml'));
 });
 
+// Explicit Favicon routes to guarantee Google Favicon crawler receives 200 with correct MIME type
+app.get('/favicon.ico', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=604800, s-maxage=2592000');
+  res.type('image/x-icon');
+  res.sendFile(path.join(__dirname, 'favicon.ico'));
+});
+
 // Clean Service Pillar Routes (Supports clean URLs without .html)
 app.get('/services/:slug', (req, res, next) => {
   const cleanSlug = req.params.slug.replace(/\.html$/, '');
   const filePath = path.join(__dirname, 'services', cleanSlug + '.html');
+  if (fs.existsSync(filePath)) {
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+    return res.sendFile(filePath);
+  }
+  next();
+});
+
+// Clean Interactive Tools Routes
+app.get('/tools/:slug', (req, res, next) => {
+  const cleanSlug = req.params.slug.replace(/\.html$/, '');
+  const filePath = path.join(__dirname, 'tools', cleanSlug + '.html');
+  if (fs.existsSync(filePath)) {
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+    return res.sendFile(filePath);
+  }
+  next();
+});
+
+// Clean Regional Geo-Pillar Routes
+app.get('/regions/:slug', (req, res, next) => {
+  const cleanSlug = req.params.slug.replace(/\.html$/, '');
+  const filePath = path.join(__dirname, 'regions', cleanSlug + '.html');
   if (fs.existsSync(filePath)) {
     res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
     return res.sendFile(filePath);
